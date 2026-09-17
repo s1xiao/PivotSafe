@@ -1,0 +1,43 @@
+﻿# cccc 项目依赖（与 environment.yml 中 pip 部分对应）
+# 若使用 conda：建议 conda env create -f environment.yml
+# 若仅用 pip：先 conda create -n cccc python=3.10，再 pip install -r requirements.txt
+# PyTorch 建议从 pytorch 渠道安装：conda install pytorch torchvision
+
+fastapi
+uvicorn
+pydantic
+python-multipart
+transformers
+accelerate
+sentencepiece
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+plotly
+pillow
+opencv-python
+jupyter
+notebook
+nbconvert
+
+# 爬虫与网页解析（simple_web_crawler、RSS 等）
+requests
+parsel
+feedparser
+
+# 视频抽帧（detectors/video）
+ffmpeg-python
+
+# 文本攻防 MVP
+datasets
+jieba
+nltk
+sentence-transformers
+spacy
+httpx
+
+
+pypdf
+python-docx

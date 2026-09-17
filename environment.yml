@@ -1,0 +1,58 @@
+﻿name: cccc
+
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  # 基础
+  - python
+  - pip
+  - numpy
+  - pandas
+  - scikit-learn
+
+  # 深度学习与多模态处理（具体 CUDA/版本可由使用者按需调整）
+  - pytorch
+  - torchvision
+  - torchaudio
+
+  # NLP / 文本相关 + 爬虫
+  - pip:
+      - transformers
+      - accelerate
+      - sentencepiece
+      - datasets
+      - jieba
+      - nltk
+      - sentence-transformers
+      - spacy
+      - httpx
+      - requests
+      - parsel
+      - feedparser
+      - ffmpeg-python
+      - python-multipart
+
+  # Web 后端
+  - fastapi
+  - uvicorn
+  - pydantic
+
+  # 可视化与分析
+  - matplotlib
+  - seaborn
+  - plotly
+
+  # 图像与视频处理（ffmpeg-python 在 pip 中）
+  - opencv
+  - pillow
+
+  # Notebook 与报告
+  - jupyter
+  - notebook
+  - nbconvert
+
+
+

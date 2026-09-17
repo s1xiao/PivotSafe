@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CCCC · AI 生成内容检测平台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-elevated: #f1f5f9;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --ok: #059669;
+      --err: #dc2626;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      color: #fff;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    .hero p {
+      margin: 0;
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+    .hero .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 1rem;
+      padding: 0.4rem 0.9rem;
+      background: rgba(255,255,255,0.2);
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .hero .status-badge.ok { background: rgba(5,150,105,0.9); }
+    .hero .status-badge.err { background: rgba(220,38,38,0.9); }
+
+    .wrap { max-width: 720px; margin: 0 auto; padding: 1.5rem; }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .card h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin: 0 0 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .card-desc { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem; }
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .btn-ghost:hover { background: rgba(37,99,235,0.08); }
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+    .form-group textarea { min-height: 80px; resize: vertical; }
+    .form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+    .progress-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      overflow: hidden;
+      margin: 0.75rem 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #3b82f6);
+      transition: width 0.3s ease;
+    }
+    .progress-fill.success { background: var(--ok); }
+    .progress-fill.error { background: var(--err); }
+    .progress-text { font-size: 0.8rem; color: var(--text-muted); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.75rem;
+    }
+    .stat {
+      background: var(--bg-elevated);
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      text-align: center;
+    }
+    .stat .label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat .value { font-size: 1.35rem; font-weight: 700; color: var(--text); margin-top: 0.25rem; }
+
+    .chart-bar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; font-size: 0.875rem; }
+    .chart-bar .label { min-width: 4rem; }
+    .chart-bar .track { flex: 1; height: 8px; background: var(--bg-elevated); border-radius: 4px; overflow: hidden; }
+    .chart-bar .fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.35s; }
+    .chart-bar .value { min-width: 2.5rem; text-align: right; color: var(--text-muted); font-size: 0.8rem; }
+    .chart-img { max-width: 100%; height: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+
+    .result-item {
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .result-item:hover { background: var(--bg-elevated); }
+    .result-item a { color: var(--accent); text-decoration: none; }
+    .result-item a:hover { text-decoration: underline; }
+    .result-item a.external { pointer-events: auto; }
+    .result-meta { color: var(--text-muted); font-size: 0.75rem; margin-top: 0.35rem; }
+    .result-detail {
+      display: none;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .result-detail.open { display: block; }
+    .result-detail .detail-text { max-height: 120px; overflow-y: auto; white-space: pre-wrap; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .result-detail .detail-images { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .result-detail .detail-images img { max-width: 120px; max-height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    .result-detail .detail-scores { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+    .chart-echarts { width: 100%; height: 220px; }
+
+    .site-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .site-chips label {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .site-chips label:hover { border-color: var(--accent); }
+    .site-chips label:has(input:checked) { border-color: var(--accent); background: rgba(37,99,235,0.08); }
+
+    .result-box {
+      padding: 1rem;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+      border-left: 4px solid var(--accent);
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .result-box.err { border-left-color: var(--err); color: var(--err); }
+
+    .media-preview {
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .media-preview img, .media-preview video { max-width: 100%; max-height: 280px; border-radius: 6px; display: block; }
+    .preview-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .preview-item { flex: 0 0 auto; }
+    .preview-label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+
+    .nav-links { margin-top: 1rem; font-size: 0.85rem; }
+    .nav-links a { color: var(--accent); text-decoration: none; margin-right: 1rem; }
+    .nav-links a:hover { text-decoration: underline; }
+
+    .pagination { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; }
+    .pagination button { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+    .pagination span { color: var(--text-muted); }
+
+    .collapsible { margin-top: 0.75rem; }
+    .collapsible-content { display: none; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+    .collapsible-content.open { display: block; }
+
+    .empty { color: var(--text-muted); font-size: 0.9rem; }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0;
+      background: var(--bg-elevated);
+      padding: 0 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-tabs a {
+      padding: 1rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-tabs a:hover { color: var(--text); }
+    .nav-tabs a.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .page-panel { display: none; min-height: calc(100vh - 220px); overflow-y: auto; }
+    .page-panel.active { display: block; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>CCCC · AI 生成内容检测平台</h1>
+    <p>多模态检测 · 爬取 · 统计 · 报告 · 一站式完成</p>
+    <div id="backend-status" class="status-badge">检查连接…</div>
+  </header>
+  <nav class="nav-tabs">
+    <a href="#crawl" id="tab-crawl">爬取</a>
+    <a href="#stats" id="tab-stats">统计</a>
+    <a href="#detect" id="tab-detect">在线检测</a>
+    <a href="/docs" target="_blank" style="margin-left:auto;border:none;">API 文档</a>
+  </nav>
+
+  <main class="wrap">
+    <div id="page-crawl" class="page-panel active">
+    <!-- 1. 一键爬取+检测 -->
+    <section class="card">
+      <h2>① 一键爬取与检测</h2>
+      <p class="card-desc">从 IT之家、Solidot、V2EX、开源中国、Linux 中国、36氪 等公开站点抓取文章（支持 1000+ 条），自动完成文本检测并生成报告。</p>
+      <div class="btn-row">
+        <button type="button" class="btn" id="web-job-start-btn">开始一键流程</button>
+        <button type="button" class="btn btn-ghost" id="web-job-advanced-toggle">参数</button>
+      </div>
+      <div id="web-job-advanced" class="collapsible">
+        <div class="collapsible-content" id="web-job-advanced-content">
+          <div class="form-group">
+            <label>抓取数量</label>
+            <input type="number" id="web-job-max-records" placeholder="1000" min="1000" max="5000" value="1000" />
+            <p class="form-hint">最少 1000 条，多站点聚合可达 1000+</p>
+          </div>
+          <div class="form-group">
+            <label>选择站点</label>
+            <div class="site-chips" id="web-job-sites">
+              <label><input type="checkbox" name="site" value="ithome" checked /><span>IT之家</span></label>
+              <label><input type="checkbox" name="site" value="solidot" checked /><span>Solidot</span></label>
+              <label><input type="checkbox" name="site" value="v2ex" checked /><span>V2EX</span></label>
+              <label><input type="checkbox" name="site" value="oschina" checked /><span>开源中国</span></label>
+              <label><input type="checkbox" name="site" value="linuxcn" checked /><span>Linux 中国</span></label>
+              <label><input type="checkbox" name="site" value="36kr" checked /><span>36氪</span></label>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;cursor:pointer;">
+            <input type="checkbox" id="web-job-download-images" />
+            下载图片并检测图像
+          </label>
+        </div>
+      </div>
+      <div id="web-job-progress" style="margin-top:1rem;">
+        <div class="progress-bar"><div class="progress-fill" id="web-job-progress-fill" style="width:0%"></div></div>
+        <div class="progress-text" id="web-job-progress-text">闲置</div>
+      </div>
+    </section>
+    </div>
+
+    <div id="page-stats" class="page-panel">
+    <!-- 2. 统计与报告 -->
+    <section class="card" id="card-stats">
+      <h2>② 统计与报告</h2>
+      <div id="stats-area"><span class="empty">加载中…</span></div>
+      <div class="btn-row" id="report-btn-row" style="display:none;margin-top:1rem;">
+        <a href="/api/report" target="_blank" class="btn">查看完整报告</a>
+      </div>
+    </section>
+    <section class="card" id="card-platform-chart" style="display:none;">
+      <h2>平台分布</h2>
+      <div id="platform-chart" class="chart-echarts"></div>
+    </section>
+    <section class="card" id="card-distribution-chart" style="display:none;">
+      <h2>分数分布</h2>
+      <div id="distribution-chart" class="chart-echarts"><span class="empty">加载中…</span></div>
+    </section>
+
+    <!-- 3. 检测结果列表 -->
+    <section class="card" id="card-results-list" style="display:none;">
+      <h2>检测结果列表</h2>
+      <div class="form-group" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+        <select id="results-platform-filter" style="width:auto;min-width:100px;">
+          <option value="">全部平台</option>
+          <option value="ithome">ithome</option>
+          <option value="solidot">solidot</option>
+          <option value="v2ex">v2ex</option>
+          <option value="oschina">oschina</option>
+          <option value="linuxcn">linuxcn</option>
+          <option value="36kr">36kr</option>
+        </select>
+        <button type="button" class="btn btn-ghost" id="results-refresh-btn">刷新</button>
+      </div>
+      <div id="results-list" class="result-item"></div>
+      <div class="pagination" id="results-pagination"></div>
+    </section>
+    </div>
+
+    <div id="page-detect" class="page-panel">
+    <!-- 4. 在线单条检测 -->
+    <section class="card">
+      <h2>③ 在线单条检测</h2>
+      <p class="card-desc">直接输入文本或填写服务器本地文件路径，即时检测。</p>
+
+      <div class="form-group">
+        <label>文本检测</label>
+        <textarea id="try-text-input" placeholder="输入待检测文本，多段换行"></textarea>
+        <div class="btn-row" style="margin-top:0.5rem;">
+          <button type="button" class="btn" id="try-text-btn">检测</button>
+          <button type="button" class="btn btn-ghost" id="try-text-sample">示例</button>
+        </div>
+        <div id="try-text-result" class="result-box" style="display:none;margin-top:0.75rem;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>图像检测</label>
+        <input type="text" id="try-image-input" placeholder="服务器本地图片路径，多张用逗号分隔" />
+        <p class="form-hint">运行后端的机器上的文件路径。可点击「人类示例」或「AI示例」填充并预览。</p>
+        <div class="btn-row" style="margin-top:0.5rem;">
+          <button type="button" class="btn" id="try-image-btn">检测</button>
+          <button type="button" class="btn btn-ghost" id="try-image-sample-human">人类示例</button>
+          <button type="button" class="btn btn-ghost" id="try-image-sample-ai">AI示例</button>
+          <button type="button" class="btn btn-ghost" id="try-image-preview-btn">预览</button>
+        </div>
+        <div id="try-image-result" class="result-box" style="display:none;margin-top:0.75rem;"></div>
+        <div id="try-image-preview" class="media-preview" style="display:none;">
+          <div class="preview-row">
+            <div class="preview-item"><span class="preview-label">人类</span><img id="try-image-preview-img" src="" alt="预览" /></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>视频检测</label>
+        <input type="text" id="try-video-input" placeholder="服务器本地视频路径" />
+        <p class="form-hint">可点击「人类示例」或「AI示例」填充并预览。</p>
+        <div class="btn-row" style="margin-top:0.5rem;">
+          <button type="button" class="btn" id="try-video-btn">检测</button>
+          <button type="button" class="btn btn-ghost" id="try-video-sample-human">人类示例</button>
+          <button type="button" class="btn btn-ghost" id="try-video-sample-ai">AI示例</button>
+          <button type="button" class="btn btn-ghost" id="try-video-preview-btn">预览</button>
+        </div>
+        <div id="try-video-result" class="result-box" style="display:none;margin-top:0.75rem;"></div>
+        <div id="try-video-preview" class="media-preview" style="display:none;">
+          <div class="preview-row">
+            <div class="preview-item"><span class="preview-label">预览</span><video id="try-video-preview-video" src="" controls preload="metadata"></video></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = '';
+    let webJobPollTimer = null;
+    let resultsPage = 1;
+    const resultsPerPage = 12;
+
+    function getPageFromHash() {
+      const h = (location.hash || '#crawl').slice(1);
+      if (h === 'stats') return 'page-stats';
+      if (h === 'detect') return 'page-detect';
+      return 'page-crawl';
+    }
+    function showPage(pageId) {
+      document.querySelectorAll('.page-panel').forEach(function(p) { p.classList.remove('active'); });
+      document.querySelectorAll('.nav-tabs a[href^="#"]').forEach(function(a) { a.classList.remove('active'); });
+      const panel = document.getElementById(pageId);
+      if (panel) panel.classList.add('active');
+      const tab = document.getElementById('tab-' + pageId.replace('page-',''));
+      if (tab) tab.classList.add('active');
+      const hash = pageId === 'page-crawl' ? 'crawl' : pageId === 'page-stats' ? 'stats' : 'detect';
+      if (location.hash !== '#' + hash) location.hash = hash;
+      if (pageId === 'page-stats' && typeof echarts !== 'undefined') {
+        setTimeout(function() {
+          ['platform-chart','distribution-chart'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) { const c = echarts.getInstanceByDom(el); if (c) c.resize(); }
+          });
+        }, 100);
+      }
+    }
+    function initRouting() {
+      showPage(getPageFromHash());
+      window.addEventListener('hashchange', function() { showPage(getPageFromHash()); });
+    }
+
+    async function checkBackend() {
+      const el = document.getElementById('backend-status');
+      try {
+        const r = await fetch(API_BASE + '/health');
+        el.className = 'status-badge ' + (r.ok ? 'ok' : 'err');
+        el.textContent = r.ok ? '✓ 已连接' : '✗ 连接异常';
+      } catch (e) {
+        el.className = 'status-badge err';
+        el.textContent = '✗ 未连接';
+      }
+    }
+
+    async function loadSummary() {
+      const el = document.getElementById('stats-area');
+      const reportRow = document.getElementById('report-btn-row');
+      try {
+        const r = await fetch(API_BASE + '/api/summary');
+        const data = r.ok ? await r.json() : null;
+        if (data && data.stats) {
+          const s = data.stats;
+          el.innerHTML = '<div class="stats-grid">' +
+            '<div class="stat"><div class="label">总样本</div><div class="value">' + (s.total ?? '-') + '</div></div>' +
+            '<div class="stat"><div class="label">文本分数均值</div><div class="value">' + (s.text_score_mean ?? '-') + '</div></div>' +
+            '<div class="stat"><div class="label">文本 AI 比例</div><div class="value">' + (s.text_ai_ratio != null ? (s.text_ai_ratio * 100).toFixed(1) + '%' : '-') + '</div></div>' +
+            '<div class="stat"><div class="label">图像分数均值</div><div class="value">' + (s.image_score_mean ?? '-') + '</div></div>' +
+            '<div class="stat"><div class="label">图像 AI 比例</div><div class="value">' + (s.image_ai_ratio != null ? (s.image_ai_ratio * 100).toFixed(1) + '%' : '-') + '</div></div>' +
+            '</div>';
+          reportRow.style.display = 'flex';
+          if (s.by_platform && Object.keys(s.by_platform).length > 0) {
+            renderPlatformChart(s.by_platform);
+            document.getElementById('card-platform-chart').style.display = 'block';
+          }
+          loadDistributionChart();
+          loadResultsList();
+        } else {
+          el.innerHTML = '<span class="empty">暂无统计。请先执行「一键爬取与检测」。</span>';
+          reportRow.style.display = 'none';
+        }
+      } catch (e) {
+        el.innerHTML = '<span class="empty">加载失败</span>';
+        reportRow.style.display = 'none';
+      }
+    }
+
+    async function loadResultsList() {
+      const card = document.getElementById('card-results-list');
+      const el = document.getElementById('results-list');
+      const pagEl = document.getElementById('results-pagination');
+      const platform = (document.getElementById('results-platform-filter')||{}).value || '';
+      try {
+        let url = API_BASE + '/api/detection/results?page=' + resultsPage + '&per_page=' + resultsPerPage;
+        if (platform) url += '&platform=' + encodeURIComponent(platform);
+        const r = await fetch(url);
+        const data = r.ok ? await r.json() : null;
+        if (!data || !data.items || data.items.length === 0) {
+          el.innerHTML = '<span class="empty">暂无检测结果</span>';
+          pagEl.innerHTML = '';
+          card.style.display = 'block';
+          return;
+        }
+        let html = '';
+        data.items.forEach(function(item) {
+          const textScore = item.text_ai_score != null ? (item.text_ai_score*100).toFixed(1)+'%' : '-';
+          const imgScores = item.image_scores || [];
+          const imgScoreStr = imgScores.length ? (imgScores.reduce((a,b)=>a+Number(b),0)/imgScores.length*100).toFixed(1)+'%' : '';
+          const label = item.text_label || '-';
+          const title = (item.title || '').trim() || (item.url||'').substring(0, 50);
+          const urlShort = (item.url||'').length > 55 ? (item.url||'').substring(0,55)+'…' : (item.url||'无链接');
+          const meta = item.platform + ' · 文本 ' + textScore + (imgScoreStr ? ' · 图像 ' + imgScoreStr : '') + ' · ' + label;
+          const pid = (item.post_id || '').replace(/"/g, '&quot;');
+          const detailId = 'detail-' + (item.post_id || Math.random().toString(36).slice(2));
+          html += '<div class="result-item" data-post-id="'+pid+'" data-detail-id="'+detailId+'">' +
+            '<a href="'+(item.url||'#')+'" target="_blank" rel="noopener" class="external">'+title+'</a>' +
+            '<div class="result-meta">'+meta+'</div>' +
+            '<div id="'+detailId+'" class="result-detail"></div>' +
+            '</div>';
+        });
+        el.innerHTML = html;
+        el.querySelectorAll('.result-item').forEach(function(row) {
+          row.onclick = function(ev) {
+            if (ev.target.tagName === 'A' && ev.target.classList.contains('external')) return;
+            const detailEl = row.querySelector('.result-detail');
+            if (!detailEl) return;
+            if (detailEl.classList.contains('open')) {
+              detailEl.classList.remove('open');
+              detailEl.innerHTML = '';
+              return;
+            }
+            const postId = row.getAttribute('data-post-id');
+            if (!postId) return;
+            detailEl.innerHTML = '<span class="empty">加载中…</span>';
+            detailEl.classList.add('open');
+            fetch(API_BASE + '/api/detection/detail/' + encodeURIComponent(postId))
+              .then(r => r.ok ? r.json() : null)
+              .then(function(d) {
+                if (!d) { detailEl.innerHTML = '<span class="empty">加载失败</span>'; return; }
+                let t = '';
+                if (d.text) t += '<div class="detail-text">' + escapeHtml((d.text||'').substring(0,500)) + (d.text.length > 500 ? '…' : '') + '</div>';
+                const urls = d.image_urls || [];
+                const paths = d.image_paths || [];
+                const imgs = urls.length ? urls : paths;
+                if (imgs.length) {
+                  t += '<div class="detail-images">';
+                  imgs.slice(0,6).forEach(function(u) {
+                    const isUrl = u && (u.startsWith('http://') || u.startsWith('https://'));
+                    const src = isUrl ? u : (API_BASE + '/api/serve/file?path=' + encodeURIComponent(u||''));
+                    t += '<img src="'+escapeHtml(src)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" />';
+                  });
+                  t += '</div>';
+                }
+                const scores = [];
+                if (d.text_ai_score != null) scores.push('文本: ' + (d.text_ai_score*100).toFixed(1) + '%');
+                (d.image_scores||[]).forEach(function(s,i){ scores.push('图'+(i+1)+': '+(s*100).toFixed(1)+'%'); });
+                if (scores.length) t += '<div class="detail-scores">' + escapeHtml(scores.join(' · ')) + '</div>';
+                detailEl.innerHTML = t || '<span class="empty">无详情</span>';
+              })
+              .catch(function() { detailEl.innerHTML = '<span class="empty">加载失败</span>'; });
+          };
+        });
+        const total = data.total || 0;
+        const totalPages = Math.ceil(total / resultsPerPage) || 1;
+        pagEl.innerHTML = '<button type="button" class="btn btn-ghost" id="results-prev"'+(resultsPage<=1?' disabled':'')+'>上一页</button>' +
+          '<span>第 '+resultsPage+' / '+totalPages+' 页，共 '+total+' 条</span>' +
+          '<button type="button" class="btn btn-ghost" id="results-next"'+(resultsPage>=totalPages?' disabled':'')+'>下一页</button>';
+        document.getElementById('results-prev').onclick = function(){ if(resultsPage>1){ resultsPage--; loadResultsList(); }};
+        document.getElementById('results-next').onclick = function(){ if(resultsPage<totalPages){ resultsPage++; loadResultsList(); }};
+        card.style.display = 'block';
+      } catch (e) {
+        el.innerHTML = '<span class="empty">加载失败</span>';
+        pagEl.innerHTML = '';
+        card.style.display = 'block';
+      }
+    }
+
+    function setupResultsList() {
+      const filterEl = document.getElementById('results-platform-filter');
+      const refreshBtn = document.getElementById('results-refresh-btn');
+      if (filterEl) filterEl.onchange = function(){ resultsPage=1; loadResultsList(); };
+      if (refreshBtn) refreshBtn.onclick = function(){ loadResultsList(); };
+    }
+
+    function renderPlatformChart(byPlatform) {
+      const el = document.getElementById('platform-chart');
+      if (typeof echarts === 'undefined') { el.innerHTML = '<span class="empty">ECharts 未加载</span>'; return; }
+      const names = Object.keys(byPlatform);
+      const values = names.map(k => Number(byPlatform[k]) || 0);
+      const chart = echarts.init(el);
+      chart.setOption({
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'category', data: names },
+        yAxis: { type: 'value' },
+        series: [{ type: 'bar', data: values, itemStyle: { color: '#2563eb' } }]
+      });
+    }
+
+    async function loadDistributionChart() {
+      const card = document.getElementById('card-distribution-chart');
+      const el = document.getElementById('distribution-chart');
+      card.style.display = 'block';
+      try {
+        const r = await fetch(API_BASE + '/api/detection/score-distribution');
+        const data = r.ok ? await r.json() : null;
+        if (typeof echarts === 'undefined' || !data) {
+          el.innerHTML = '<span class="empty">' + (data ? '无分布数据' : '加载失败') + '</span>';
+          return;
+        }
+        const textBuckets = data.text_buckets || [];
+        const imageBuckets = data.image_buckets || [];
+        const hasText = textBuckets.some(b => b.count > 0);
+        const hasImage = imageBuckets.some(b => b.count > 0);
+        if (!hasText && !hasImage) {
+          el.innerHTML = '<span class="empty">无分数数据</span>';
+          return;
+        }
+        const buckets = textBuckets.length ? textBuckets : imageBuckets;
+        const labels = buckets.map((b) => ((b.bin_start + b.bin_end) / 2).toFixed(2));
+        const chart = echarts.init(el);
+        const series = [];
+        if (hasText) {
+          series.push({
+            name: '文本分数',
+            type: 'bar',
+            data: textBuckets.map(b => b.count),
+            itemStyle: { color: '#2563eb' }
+          });
+        }
+        if (hasImage) {
+          series.push({
+            name: '图像分数',
+            type: 'bar',
+            data: imageBuckets.map(b => b.count),
+            itemStyle: { color: '#059669' }
+          });
+        }
+        chart.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: { data: series.map(s => s.name), bottom: 0 },
+          xAxis: { type: 'category', data: labels },
+          yAxis: { type: 'value' },
+          series: series
+        });
+      } catch (e) {
+        el.innerHTML = '<span class="empty">加载失败</span>';
+      }
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+    function showResult(id, text, isErr) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'result-box' + (isErr ? ' err' : '');
+      el.style.display = 'block';
+    }
+    function parseErr(r, d) {
+      if (!d || typeof d.detail==='undefined') return '请求失败 '+r.status;
+      const x = d.detail;
+      if (Array.isArray(x)) return x.map(i=>i.msg||JSON.stringify(i)).join('; ');
+      return typeof x==='string' ? x : JSON.stringify(x);
+    }
+
+    function updateWebJobUI(state) {
+      const fill = document.getElementById('web-job-progress-fill');
+      const textEl = document.getElementById('web-job-progress-text');
+      if (!state) { fill.style.width='0%'; fill.className='progress-fill'; textEl.textContent='闲置'; return; }
+      const p = Math.max(0,Math.min(100,state.progress||0));
+      fill.style.width = p+'%';
+      fill.className = 'progress-fill' + (state.status==='success'?' success':'') + (state.status==='error'?' error':'');
+      if (state.status==='idle') textEl.textContent = '闲置';
+      else if (state.status==='running') textEl.textContent = '运行中…' + (state.message||'');
+      else if (state.status==='success') textEl.textContent = '✓ 完成';
+      else if (state.status==='error') textEl.textContent = '✗ 失败：' + (state.message||'');
+      else textEl.textContent = state.message || state.status;
+    }
+
+    async function pollWebJobStatus(stopWhenDone) {
+      try {
+        const r = await fetch(API_BASE + '/api/jobs/web_crawl_pipeline/status');
+        const data = r.ok ? await r.json() : null;
+        if (!data) { updateWebJobUI(null); return; }
+        updateWebJobUI(data);
+        if (stopWhenDone && (data.status==='success'||data.status==='error')) {
+          if (webJobPollTimer) { clearInterval(webJobPollTimer); webJobPollTimer = null; }
+          if (data.status==='success') { loadSummary(); loadResultsList(); }
+        }
+      } catch (e) { updateWebJobUI(null); }
+    }
+    function startWebJobPolling() {
+      if (webJobPollTimer) clearInterval(webJobPollTimer);
+      pollWebJobStatus(false);
+      webJobPollTimer = setInterval(()=>pollWebJobStatus(true), 3000);
+    }
+
+    document.getElementById('web-job-advanced-toggle').onclick = function() {
+      const c = document.getElementById('web-job-advanced-content');
+      c.classList.toggle('open');
+      this.textContent = c.classList.contains('open') ? '收起' : '参数';
+    };
+
+    function getSelectedSites() {
+      const cbs = document.querySelectorAll('#web-job-sites input[name="site"]:checked');
+      return Array.from(cbs).map(c=>c.value).join(',') || 'ithome,solidot,v2ex,oschina,linuxcn,36kr';
+    }
+
+    document.getElementById('web-job-start-btn').onclick = async function() {
+      const btn = this;
+      const payload = { sites: getSelectedSites(), download_images: !!document.getElementById('web-job-download-images').checked };
+      const n = parseInt(document.getElementById('web-job-max-records').value, 10);
+      payload.max_records = (!isNaN(n) && n >= 1000) ? n : 1000;
+      btn.disabled = true;
+      updateWebJobUI({ status:'running', progress:5, message:'启动中…' });
+      try {
+        const r = await fetch(API_BASE + '/api/jobs/web_crawl_pipeline/start', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        const data = r.ok ? await r.json() : null;
+        if (!r.ok) updateWebJobUI({ status:'error', progress:100, message: parseErr(r,data) });
+        else startWebJobPolling();
+      } catch (e) {
+        updateWebJobUI({ status:'error', progress:100, message: '请求异常' });
+      }
+      btn.disabled = false;
+    };
+
+    document.getElementById('try-text-sample').onclick = function() {
+      document.getElementById('try-text-input').value = '早上地铁挤死了，差点没赶上。中午吃了个盖浇饭，一般般吧。\n综上所述，本文从多个维度分析了该现象的产生原因，并提出了相应的解决建议，以期对相关领域的研究与实践提供参考。';
+      document.getElementById('try-text-btn').click();
+    };
+    function mediaUrl(path) { return (window.location.origin || '') + path; }
+    document.getElementById('try-image-sample-human').onclick = async function() {
+      document.getElementById('try-image-result').style.display = 'none';
+      try {
+        const r = await fetch(API_BASE + '/api/sample/paths');
+        const d = r.ok ? await r.json() : {};
+        document.getElementById('try-image-input').value = d.human_image_path || d.image_path || '';
+      } catch (_) {}
+      document.getElementById('try-image-preview-img').src = mediaUrl('/api/sample/image/human');
+      document.getElementById('try-image-preview').style.display = 'block';
+    };
+    document.getElementById('try-image-sample-ai').onclick = async function() {
+      document.getElementById('try-image-result').style.display = 'none';
+      try {
+        const r = await fetch(API_BASE + '/api/sample/paths');
+        const d = r.ok ? await r.json() : {};
+        document.getElementById('try-image-input').value = d.ai_image_path || d.image_path || '';
+      } catch (_) {}
+      document.getElementById('try-image-preview-img').src = mediaUrl('/api/sample/image/ai');
+      document.getElementById('try-image-preview').style.display = 'block';
+    };
+    document.getElementById('try-video-sample-human').onclick = async function() {
+      document.getElementById('try-video-result').style.display = 'none';
+      try {
+        const r = await fetch(API_BASE + '/api/sample/paths');
+        const d = r.ok ? await r.json() : {};
+        document.getElementById('try-video-input').value = d.human_video_path || d.video_path || '';
+      } catch (_) {}
+      document.getElementById('try-video-preview-video').src = mediaUrl('/api/sample/video/human');
+      document.getElementById('try-video-preview').style.display = 'block';
+    };
+    document.getElementById('try-video-sample-ai').onclick = async function() {
+      document.getElementById('try-video-result').style.display = 'none';
+      try {
+        const r = await fetch(API_BASE + '/api/sample/paths');
+        const d = r.ok ? await r.json() : {};
+        document.getElementById('try-video-input').value = d.ai_video_path || d.video_path || '';
+      } catch (_) {}
+      document.getElementById('try-video-preview-video').src = mediaUrl('/api/sample/video/ai');
+      document.getElementById('try-video-preview').style.display = 'block';
+    };
+    document.getElementById('try-image-preview-btn').onclick = function() {
+      const path = document.getElementById('try-image-input').value.trim();
+      if (!path) return;
+      document.getElementById('try-image-preview-img').src = mediaUrl('/api/serve/file?path=' + encodeURIComponent(path));
+      document.getElementById('try-image-preview').style.display = 'block';
+    };
+    document.getElementById('try-video-preview-btn').onclick = function() {
+      const path = document.getElementById('try-video-input').value.trim();
+      if (!path) return;
+      document.getElementById('try-video-preview-video').src = mediaUrl('/api/serve/file?path=' + encodeURIComponent(path));
+      document.getElementById('try-video-preview').style.display = 'block';
+    };
+
+    document.getElementById('try-text-btn').onclick = async function() {
+      const input = document.getElementById('try-text-input').value.trim();
+      if (!input) { showResult('try-text-result','请先输入文本',true); return; }
+      const texts = input.split(/\n/).map(s=>s.trim()).filter(Boolean);
+      if (!texts.length) { showResult('try-text-result','请先输入文本',true); return; }
+      const btn = this; btn.disabled = true; btn.textContent = '检测中…';
+      try {
+        const r = await fetch(API_BASE + '/api/text/score', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({texts}) });
+        const data = r.ok ? await r.json() : null;
+        if (!r.ok) { showResult('try-text-result', parseErr(r,data), true); return; }
+        if (!data?.results) { showResult('try-text-result','返回异常',true); return; }
+        const lines = data.results.map((x,i)=> (i+1)+'. '+(x.text.substring(0,50)+(x.text.length>50?'…':''))+' → AI分数 '+x.ai_score.toFixed(4)+' · '+x.label_pred);
+        showResult('try-text-result', lines.join('\n'), false);
+      } catch (e) { showResult('try-text-result','请求异常',true); }
+      btn.disabled = false; btn.textContent = '检测';
+    };
+
+    document.getElementById('try-image-btn').onclick = async function() {
+      const input = document.getElementById('try-image-input').value.trim();
+      if (!input) { showResult('try-image-result','请先输入路径',true); return; }
+      const paths = input.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
+      if (!paths.length) { showResult('try-image-result','请先输入路径',true); return; }
+      const btn = this; btn.disabled = true; btn.textContent = '检测中…';
+      try {
+        const r = await fetch(API_BASE + '/api/image/score', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({image_paths:paths}) });
+        const data = r.ok ? await r.json() : null;
+        if (!r.ok) { showResult('try-image-result', parseErr(r,data), true); return; }
+        if (!data?.results) { showResult('try-image-result','返回异常',true); return; }
+        const lines = data.results.map(x=> x.path+' → AI分数 '+x.ai_score.toFixed(4)+' · '+x.label_pred);
+        showResult('try-image-result', lines.join('\n'), false);
+      } catch (e) { showResult('try-image-result','请求异常',true); }
+      btn.disabled = false; btn.textContent = '检测';
+    };
+
+    document.getElementById('try-video-btn').onclick = async function() {
+      const path = document.getElementById('try-video-input').value.trim();
+      if (!path) { showResult('try-video-result','请先输入路径',true); return; }
+      const btn = this; btn.disabled = true; btn.textContent = '检测中…';
+      try {
+        const r = await fetch(API_BASE + '/api/video/score', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({video_path:path}) });
+        const data = r.ok ? await r.json() : null;
+        if (!r.ok) { showResult('try-video-result', parseErr(r,data), true); return; }
+        if (!data) { showResult('try-video-result','返回异常',true); return; }
+        let t = '路径: '+data.video_path+'\n帧数: '+data.num_frames+'\n均值: '+data.mean_score+' 最大: '+data.max_score+'\n标签: '+data.label_pred;
+        if (data.frame_scores?.length) t += '\n各帧: '+data.frame_scores.join(', ');
+        showResult('try-video-result', t, false);
+      } catch (e) { showResult('try-video-result','请求异常',true); }
+      btn.disabled = false; btn.textContent = '检测';
+    };
+
+    initRouting();
+    checkBackend();
+    loadSummary();
+    pollWebJobStatus(false);
+    setupResultsList();
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# 环境与 IDE
+.venv/
+venv/
+.env
+.idea/
+.vscode/
+
+# 数据与输出（避免提交大文件与本地结果）
+data/
+report/basic_stats.json
+report/report.html
+
+# 模型与缓存
+*.pt
+*.pth
+.cache/
+
+# 系统与临时
+.DS_Store
+*.log
+*.tmp

@@ -1,0 +1,7 @@
+{
+    "checkpoint_path":  "checkpoints/image/ssp/adm/Net_epoch_best.pth",
+    "device":  null,
+    "batch_size":  8,
+    "threshold":  0.5,
+    "patch_size":  32
+}

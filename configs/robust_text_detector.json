@@ -1,0 +1,9 @@
+{
+  "hf_model_name": "hfl/chinese-roberta-wwm-ext",
+  "checkpoint_dir": "checkpoints/robust_roberta",
+  "device": null,
+  "max_length": 256,
+  "batch_size": 8,
+  "threshold": 0.5,
+  "_comment": "robust 检测器：训练后权重目录；若目录不存在则 API 返回 503"
+}

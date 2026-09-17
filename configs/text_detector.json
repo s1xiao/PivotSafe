@@ -1,0 +1,9 @@
+{
+  "hf_model_name": "Hello-SimpleAI/chatgpt-detector-roberta-chinese",
+  "device": null,
+  "max_length": 512,
+  "batch_size": 8,
+  "threshold": 0.5,
+  "_comment": "顶会检测器：HC3 论文 (arxiv:2301.07597) 官方 RoBERTa 中文检测模型，与 chatgpt-comparison-detection 同源"
+}
+
