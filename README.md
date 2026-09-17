@@ -1,6 +1,6 @@
 # CCCC · AI 生成内容检测平台
 
-多模态（文本 / 图像 / 视频）AI 内容检测，支持爬取 → 检测 → 报告 全流程。
+文本AI 内容检测，支持爬取 → 检测 → 报告 全流程。
 
 **CAA 代码副本（参考）**：`third_party/caa/` 仍为 HQA/TextHacker 等 vendored 代码。**固定链**：**Pivot（Anchor 排序 + 中文束搜，失败则仅高亮）→ HQA → TextHacker**；Step2/3 需 `TextAIDetector`，无 MLM 贪心回退。中文近义词默认按句用 MLM 候选建邻（`CCCC_CAA_SYNONYMS=chinese`），无需为固定链放入 `counter-fitted-vectors.txt`、`cos_sim_matrix.pkl`（`legacy` 模式除外）。
 
